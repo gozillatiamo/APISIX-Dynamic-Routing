@@ -1,0 +1,30 @@
+apisix:
+  enable_admin: true
+  allow_admin:
+    - 0.0.0.0/0
+  admin_key:
+    - key: edd1c9f034335f136f87ad84b625c8f1
+      role: admin
+  # extra_lua_path: "/usr/local/apisix/plugins/?.lua"
+  # lua_module_hook: "domain-theme-router"
+
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+# Override etcd configuration
+# etcd:
+#   host:
+#     - "http://etcd:2379"
+#   prefix: "/apisix"
+#   timeout: 30
+#   user: ""
+#   password: ""
+#   tls:
+#     verify: false
+#     sni: ""
+
+plugins:
+  - domain-theme-router
+#END

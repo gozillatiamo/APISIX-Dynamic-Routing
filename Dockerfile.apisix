@@ -1,0 +1,37 @@
+FROM debian:bullseye-slim
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg2 \
+    ca-certificates \
+    lsb-release \
+    && curl -fsSL https://openresty.org/package/pubkey.gpg | gpg --dearmor -o /usr/share/keyrings/openresty-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openresty-archive-keyring.gpg] http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y openresty \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install APISIX
+RUN curl -L https://github.com/apache/apisix/releases/download/3.9.0/apisix-3.9.0-0.el7.x86_64.rpm -o apisix.rpm \
+    && apt-get update \
+    && apt-get install -y ./apisix.rpm \
+    && rm apisix.rpm
+
+# Create necessary directories
+RUN mkdir -p /usr/local/apisix/conf
+
+# Copy configuration files
+COPY apisix_conf/config.yaml /usr/local/apisix/conf/
+COPY apisix_conf/nginx.conf /usr/local/apisix/conf/
+COPY apisix_conf/mime.types /usr/local/apisix/conf/
+
+# Set environment variables
+ENV APISIX_STAND_ALONE=true
+
+# Expose ports
+EXPOSE 9080 9443
+
+# Start APISIX
+CMD ["apisix", "start"] 

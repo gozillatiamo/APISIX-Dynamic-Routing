@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dynamic Routing POC
 
-## Getting Started
+This project demonstrates a dynamic routing system using Next.js, APISIX, PostgreSQL, and Redis. It implements a multi-theme architecture where different domains can serve different themes of the same application.
 
-First, run the development server:
+## Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Docker and Docker Compose
+- Git
+
+## Project Structure
+
+```
+.
+├── apisix/                 # APISIX configuration and custom plugins
+├── src/                   # Next.js application source code
+├── public/               # Static assets
+├── docker-compose.yml    # Docker services configuration
+├── Dockerfile           # Main application Dockerfile
+└── Dockerfile.apisix    # APISIX Dockerfile
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup Instructions
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Clone the Repository
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+git clone <repository-url>
+cd dynamic-routing-poc
+```
 
-## Learn More
+### 2. Configure Hosts File
 
-To learn more about Next.js, take a look at the following resources:
+Add the following entries to your hosts file (`/etc/hosts` on Linux/Mac or `C:\Windows\System32\drivers\etc\hosts` on Windows):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+127.0.0.1 abcd.a.com
+127.0.0.1 market.com
+127.0.0.1 abcd.b.com
+127.0.0.1 carroom.com
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Start the Services
 
-## Deploy on Vercel
+```bash
+docker-compose up -d
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This will start the following services:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Theme A (Next.js) on port 4000
+- Theme B (Next.js) on port 4001
+- PostgreSQL on port 5432
+- Redis on port 6379
+- APISIX on port 80 (HTTP) and 9080 (Admin API)
+
+### 4. Access the Application
+
+You can access the different themes through their respective domains:
+
+Theme A domains:
+
+- http://abcd.a.com
+- http://market.com
+
+Theme B domains:
+
+- http://abcd.b.com
+- http://carroom.com
+
+## Architecture
+
+The project uses a microservices architecture with the following components:
+
+- **Next.js Applications**: Two instances running different themes
+- **APISIX**: API Gateway handling routing based on domains
+- **PostgreSQL**: Database for storing application data
+- **Redis**: Caching layer
+
+## Environment Variables
+
+The following environment variables are used:
+
+- `NEXT_PUBLIC_SITE_THEME`: Theme identifier (A or B)
+- Database credentials (configured in docker-compose.yml)
+
+## Troubleshooting
+
+1. If you can't access the domains, ensure your hosts file is properly configured
+2. If services fail to start, check Docker logs:
+
+```bash
+docker-compose logs
+```
+
+3. To reset the database:
+
+```bash
+docker-compose down -v
+docker-compose up -d
+```

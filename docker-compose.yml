@@ -1,0 +1,79 @@
+version: "3.8"
+
+services:
+  # Theme Services
+  theme-a:
+    build:
+      context: .
+      args:
+        SITE_THEME: A
+    ports:
+      - "4000:3000"
+    environment:
+      - NEXT_PUBLIC_SITE_THEME=A
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  theme-b:
+    build:
+      context: .
+      args:
+        SITE_THEME: B
+    ports:
+      - "4001:3000"
+    environment:
+      - NEXT_PUBLIC_SITE_THEME=B
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Database
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: themerouting
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  # APISIX
+  apisix:
+    build:
+      context: ./apisix
+      dockerfile: Dockerfile
+    ports:
+      - "9080:9080" # Admin API
+      - "80:9080" # HTTP
+    volumes:
+      - ./apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml
+      - ./apisix/config.yaml:/usr/local/apisix/conf/config.yaml
+      - ./apisix/plugins/domain-theme-router.lua:/usr/local/apisix/apisix/plugins/domain-theme-router.lua
+    depends_on:
+      - theme-a
+      - theme-b
+      - postgres
+      - redis
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
